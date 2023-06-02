@@ -144,9 +144,10 @@ axios
 
 // all sites that would be labeled an article
 const articleSites = ['substack.com', 'wsj.com', 'bloomberg.com', 'newsletter', 'medium.com', 'blog']
+const websites = ['.io', '.ai', '.app']
 
 function determineType(item) {
-  if (item.name.includes('reddit')) {
+  if (item.name.includes('reddit') || item.url.includes('reddit.com')) {
     return mergedObj.reddit
   }
   if (item.url.includes('twitter.com')) {
@@ -169,5 +170,8 @@ function determineType(item) {
   }
   if (item.url.includes('github.com')) {
     return mergedObj.coding
+  }
+  if (websites.some(site => item.url.includes(site))) {
+    return mergedObj.website
   }
 }
