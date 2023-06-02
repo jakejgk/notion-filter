@@ -104,6 +104,9 @@ axios
           return mergedObj.reddit
         }
         if (item.url.includes('twitter')) {
+          return mergedObj.tweet
+        }
+        if (item.url.includes('youtube') || item.name.includes('youtube.com/watch')) {
           return mergedObj.youtube
         }
       }
