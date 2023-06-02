@@ -3,13 +3,14 @@ import 'dotenv/config';
 
 const secret_key = process.env.SECRET_KEY
 const test_db = process.env.TEST_DB
+const resources_db = process.env.RESOURCES_DB
 
 
 // get info from database
 const query = {
   method: 'POST',
   maxBodyLength: Infinity,
-  url: `https://api.notion.com/v1/databases/${test_db}/query`,
+  url: `https://api.notion.com/v1/databases/${resources_db}/query`,
   headers: {
     accept: 'application/json',
     'Notion-Version': '2022-02-22',
@@ -22,7 +23,7 @@ const query = {
 // retrieve all database select options
 const db = {
   method: 'GET',
-  url: `https://api.notion.com/v1/databases/${test_db}`,
+  url: `https://api.notion.com/v1/databases/${resources_db}`,
   headers: {
     accept: 'application/json', 
     'Notion-Version': '2022-02-22',
@@ -44,13 +45,14 @@ axios
           let selectName = selectTypes[i].name.toLowerCase()
           newSelect.push({ [selectName]: selectTypes[i] })
         }
+        
         // merge all select types into one object {mergedObj}
         mergedObj = newSelect.reduce((acc, obj) => {
           return { ...acc, ...obj }
         })
       })
       .catch(error => {
-        console.log(error)
+        console.log('Getting Types Error \n', error)
       })
 
 axios
@@ -98,18 +100,6 @@ axios
       return noSelect
     })
     .then(response => {
-      // algorithm for determining type of select
-      function determineType(item) {
-        if (item.name.includes('reddit')) {
-          return mergedObj.reddit
-        }
-        if (item.url.includes('twitter')) {
-          return mergedObj.tweet
-        }
-        if (item.url.includes('youtube') || item.name.includes('youtube.com/watch')) {
-          return mergedObj.youtube
-        }
-      }
       // determine type of select option each page needs and turn it into an obj for the patch request
       for (let i = 0; i < noSelect.length; i++) {
         const type = determineType(response[i])
@@ -141,11 +131,43 @@ axios
               console.log(`Adding [${typeAdded}] type to \`${noSelect[i].name}\``)
             })
             .catch(error => {
-              console.log(error)
+              console.log('Patch Request Error\n', error)
             })
          }
         }
     })
     .catch(error => {
-      console.error(error);
+      console.error('Query Database Error\n', error);
     });
+
+// algorithm for determining type of select
+
+// all sites that would be labeled an article
+const articleSites = ['substack.com', 'wsj.com', 'bloomberg.com', 'newsletter', 'medium.com', 'blog']
+
+function determineType(item) {
+  if (item.name.includes('reddit')) {
+    return mergedObj.reddit
+  }
+  if (item.url.includes('twitter.com')) {
+    return mergedObj.tweet
+  }
+  if (item.url.includes('youtube.com/watch') || item.name.includes('youtube')) {
+    return mergedObj.youtube
+  }
+  if (articleSites.some(site => item.url.includes(site))) {
+    return mergedObj.article
+  }
+  if (item.url.includes('tiktok.com')) {
+    return mergedObj.tiktok
+  }
+  if (item.url.includes('.pdf')) {
+    return mergedObj.pdf
+  }
+  if (item.url.includes('wikipedia.com')) {
+    return mergedObj.wikipedia
+  }
+  if (item.url.includes('github.com')) {
+    return mergedObj.coding
+  }
+}
